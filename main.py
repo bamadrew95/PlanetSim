@@ -41,9 +41,6 @@ class Game():
     # Initialize sprites
     bg = SimBG(self.all_sprites)
     sun = Sun([self.all_sprites, self.collision_sprites, self.non_orbiting_sprites], 25)
-  
-  def physics_simulator(self):
-    self.satellites.update()
 
   def add_satellite(self, pos):
     Satellite([self.all_sprites, self.satellites], pos, self.velocity_selector, self.rand_color)
@@ -112,7 +109,7 @@ class Game():
 
       # SIMULATOR GAME LOGIC
       if self.game_state == 'sim':
-        self.physics_simulator()
+        self.satellites.update()
         self.all_sprites.draw(self.screen)
         self.draw_trails()
         self.collisions()
