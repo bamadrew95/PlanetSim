@@ -3,7 +3,7 @@ from settings import *
 from game_files.physics import Physics
 import math
 
-class BG(pygame.sprite.Sprite):
+class SimBG(pygame.sprite.Sprite):
   def __init__(self, groups):
     super().__init__(groups)
 
@@ -116,17 +116,3 @@ class TrailDot(pygame.sprite.Sprite):
     self.rect = self.image.get_rect(center = pos)
 
     pygame.draw.circle(self.image, color, (1, 1), 1)
-
-class Arrow(pygame.sprite.Sprite):
-  def __init__(self, groups, color, start_pos):
-    super().__init__(groups)
-
-    magenta = (255, 0, 255)
-
-    self.image = pygame.surface.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
-    self.image.fill((255, 0, 255))
-    self.image.set_colorkey(magenta)
-    self.rect = self.image.get_rect(topleft = (0, 0))
-
-    pygame.draw.line(self.image, color, start_pos, pygame.mouse.get_pos(), 4)
-    

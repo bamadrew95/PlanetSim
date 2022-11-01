@@ -1,6 +1,6 @@
 import pygame, sys, time
 from settings import *
-from game_files.sprites import BG, Sun, Satellite, TrailDot, Arrow
+from game_files.sprites import SimBG, Sun, Satellite, TrailDot
 from game_files.ui import UI
 from random import randint
 import math
@@ -39,7 +39,7 @@ class Game():
     self.add_mode_arrow = pygame.sprite.GroupSingle()
 
     # Initialize sprites
-    bg = BG(self.all_sprites)
+    bg = SimBG(self.all_sprites)
     sun = Sun([self.all_sprites, self.collision_sprites, self.non_orbiting_sprites], 25)
   
   def physics_simulator(self):
@@ -110,7 +110,7 @@ class Game():
             self.rand_color = (randint(75, 255), randint(75, 255), randint(75, 255))
             
 
-      # check game state
+      # SIMULATOR GAME LOGIC
       if self.game_state == 'sim':
         self.physics_simulator()
         self.all_sprites.draw(self.screen)
