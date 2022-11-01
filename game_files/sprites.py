@@ -2,20 +2,26 @@ import pygame
 from settings import *
 from game_files.physics import Physics
 import math
+from random import randint
 
 class CreateSprites:
-  def __init__(self, all_sprites, collision_sprites, orbiting_sprites, sun_pos, sun_mass):
-    self.create_bg(all_sprites)
-    self.create_sun(all_sprites, collision_sprites, orbiting_sprites, sun_pos, sun_mass)       
+  def __init__(self, bg_groups: list, sun_groups: list, sun_pos: tuple, sun_mass: int):
+    self.create_bg(bg_groups)
+    self.create_sun(sun_groups, sun_pos, sun_mass)       
     
-  def create_bg(self, all_sprites):
-    SimBG(all_sprites)
+  def create_main_menu(self, bg_groups: list, button_groups: list):
+    MenuBG(bg_groups)
+    MenuButton(button_groups, 1001, 'Start Simulator', WINDOW_HEIGHT / 2, (0, 0, 0), (255, 0, 0), 48)
+    MenuButton(button_groups, 1002, 'Settings', WINDOW_HEIGHT / 2 + 80, (0, 0, 0), (255, 0, 0), 48)
   
-  def create_sun(self, all_sprites, collision_sprites, orbiting_sprites, sun_pos: tuple, sun_mass: int):
-    Sun([all_sprites, collision_sprites, orbiting_sprites], 25, sun_pos, sun_mass)
+  def create_bg(self, groups: list):
+    SimBG(groups)
+  
+  def create_sun(self, groups: list, sun_pos: tuple, sun_mass: int):
+    Sun(groups, 25, sun_pos, sun_mass)
 
-  def create_traildots(self, sprite_group_list, satellites, trail_sprites):
-    TrailDots().draw_trails(sprite_group_list, satellites, trail_sprites)
+  def create_traildots(self, groups: list, satellites, trail_sprites):
+    TrailDots().draw_trails(groups, satellites, trail_sprites)
 
 class SimBG(pygame.sprite.Sprite):
   def __init__(self, groups):
@@ -26,8 +32,8 @@ class SimBG(pygame.sprite.Sprite):
     self.rect = self.image.get_rect(topleft = (0, 0))
 
     # background image
-    bg_img = pygame.image.load('assets/graphics/sim/bg1.jpg').convert()
-    bg_scale_factor = WINDOW_WIDTH / bg_img.get_height()
+    bg_img = pygame.image.load('assets/graphics/sim/bg.jpg').convert()
+    bg_scale_factor = WINDOW_HEIGHT / bg_img.get_height()
     full_width = bg_img.get_width() * bg_scale_factor
     full_height = bg_img.get_height() * bg_scale_factor
     scaled_bg_img = pygame.transform.scale(bg_img, (full_width, full_height))
@@ -148,3 +154,33 @@ class TrailDots():
       self.rect = self.image.get_rect(center = pos)
 
       pygame.draw.circle(self.image, color, (1, 1), 1)
+
+class MenuBG(pygame.sprite.Sprite):
+  def __init__(self, groups):
+    super().__init__(groups)
+
+    surf = pygame.image.load('assets/graphics/menu/bg.jpg')
+    scale_factor = WINDOW_HEIGHT / surf.get_height()
+    self.image = pygame.transform.scale(surf, pygame.math.Vector2(surf.get_size()) * scale_factor)
+    self.rect = self.image.get_rect(topleft = (0, 0))
+
+class MenuButton(pygame.sprite.Sprite):
+  def __init__(self, groups, id: int, text: str, y_pos: int, bg_color: tuple, font_color: tuple, font_size: int):
+    super().__init__(groups)
+    self.id = id
+    self.text = text
+    self.font_color = font_color
+    self.size = (400, 60)
+    self.hover = False
+
+    self.button_font = pygame.font.Font('assets/fonts/Pixeltype.ttf', font_size)
+    
+    self.image = pygame.surface.Surface(self.size)
+    self.image.fill(bg_color)
+    self.rect = self.image.get_rect(midbottom = (WINDOW_WIDTH / 2, y_pos))
+
+  def update(self):
+    # update text to surface
+    text_surf = self.button_font.render(self.text, True, self.font_color)
+    text_rect = text_surf.get_rect(midtop = (self.size[0] / 2, 16))
+    self.image.blit(text_surf, text_rect)

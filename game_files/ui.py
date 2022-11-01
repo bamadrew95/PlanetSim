@@ -7,6 +7,20 @@ class UI():
   def __init__(self):
     pass
 
+  def detect_hover(self, sprite_group, default_cursor, pointer_cursor):
+    hover = 0
+    for sprite in sprite_group:
+      if sprite.rect.collidepoint(pygame.mouse.get_pos()):
+        sprite.hover = True
+        hover += 1
+      else:
+        sprite.hover = False
+
+    if hover:
+      pygame.mouse.set_cursor(pointer_cursor)
+    else:
+      pygame.mouse.set_cursor(default_cursor)
+
   def add_mode(self, surface, click_pos, font, color):
     line_width = 4
     mouse_pos = pygame.mouse.get_pos()
