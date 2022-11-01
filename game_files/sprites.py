@@ -3,6 +3,20 @@ from settings import *
 from game_files.physics import Physics
 import math
 
+class CreateSprites:
+  def __init__(self, all_sprites, collision_sprites, orbiting_sprites, sun_pos, sun_mass):
+    self.create_bg(all_sprites)
+    self.create_sun(all_sprites, collision_sprites, orbiting_sprites, sun_pos, sun_mass)       
+    
+  def create_bg(self, all_sprites):
+    SimBG(all_sprites)
+  
+  def create_sun(self, all_sprites, collision_sprites, orbiting_sprites, sun_pos: tuple, sun_mass: int):
+    Sun([all_sprites, collision_sprites, orbiting_sprites], 25, sun_pos, sun_mass)
+
+  def create_traildots(self, sprite_group_list, satellites, trail_sprites):
+    TrailDots().draw_trails(sprite_group_list, satellites, trail_sprites)
+
 class SimBG(pygame.sprite.Sprite):
   def __init__(self, groups):
     super().__init__(groups)
@@ -55,30 +69,29 @@ class SimBG(pygame.sprite.Sprite):
     draw_cell_lines(grid_cells, 1, 1)
 
 class Sun(pygame.sprite.Sprite):
-  def __init__(self, groups, size):
+  def __init__(self, groups, size, pos, mass):
     super().__init__(groups)
     self.size = size
-    color = (255, 255, 200)
-    initial_position = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
-    self.mass = 8
+    self.mass = mass
+    scale_factor = self.size / pygame.image.load('assets/graphics/sim/sun1.png').get_height()
+    
+    surf = pygame.image.load('assets/graphics/sim/sun1.png').convert_alpha()
+    self.image = pygame.transform.scale(surf, pygame.math.Vector2(surf.get_size()) * scale_factor)
 
-    self.image = pygame.surface.Surface((self.size, self.size))
-    self.image.set_colorkey((255, 0, 255))
-    self.image.fill((255, 0, 255))
-    pygame.draw.circle(self.image, color, (self.size / 2, self.size / 2), self.size / 2)
-
-    self.rect = self.image.get_rect(center = initial_position)
+    self.rect = self.image.get_rect(center = pos)
     self.pos = pygame.math.Vector2(self.rect.center)
+
     self.mask = pygame.mask.from_surface(self.image)
 
 class Satellite(pygame.sprite.Sprite):
-  def __init__(self, groups, pos, speed, color):
+  def __init__(self, groups, pos, speed, color, sun_sprites):
     super().__init__(groups)
     self.sim_slowdown = 10
     self.color = color
     self.size = 10
     self.init_position = pos
     self.speed = pygame.math.Vector2(speed)
+    self.sun_sprites = sun_sprites
 
     self.image = pygame.surface.Surface((self.size, self.size))
     self.image.fill((255, 0, 255))
@@ -96,23 +109,42 @@ class Satellite(pygame.sprite.Sprite):
     self.threepiovertwo = (3 * math.pi) / 2
 
   def update(self):
-    sun_mass = 750
-    sun_pos = pygame.math.Vector2((400, 400))
-    gravitational_force = Physics().gravitational_force(sun_mass, sun_pos, self.pos)
+    # for sun_sprite in self.sun_sprites:
+    #   gravitational_force = Physics().gravitational_force(sun_sprite.mass, sun_sprite.pos, self.pos)
+    #   print(gravitational_force)
+    #   self.speed -= gravitational_force
 
+    sun_mass = 750
+    sun_pos = (400, 400)
+    gravitational_force = Physics().gravitational_force(sun_mass, sun_pos, self.pos)
     self.speed -= gravitational_force
 
     # calc new position
     self.pos += self.speed
     self.rect.center = pygame.math.Vector2((round(self.pos.x), round(self.pos.y)))
 
-class TrailDot(pygame.sprite.Sprite):
-  def __init__(self, groups, color, pos):
-    super().__init__(groups)
-    self.pos = pygame.math.Vector2((round(pos.x), round(pos.y)))
-    self.timer = 0
+class TrailDots():
+  def __init__(self):
+    pass
 
-    self.image = pygame.surface.Surface((2, 2))
-    self.rect = self.image.get_rect(center = pos)
+  def draw_trails(self, group_list, satellites_group, trail_sprites_group):
+    for sprite in satellites_group:
+      self.TrailDot(group_list, sprite.color, sprite.pos)
+    
+    for sprite in trail_sprites_group:
+      seconds = 10
+      frames = seconds * FRAMERATE
+      sprite.timer += 1
+      if sprite.timer > frames:
+        sprite.kill()
 
-    pygame.draw.circle(self.image, color, (1, 1), 1)
+  class TrailDot(pygame.sprite.Sprite):
+    def __init__(self, groups, color, pos):
+      super().__init__(groups)
+      self.pos = pygame.math.Vector2((round(pos.x), round(pos.y)))
+      self.timer = 0
+
+      self.image = pygame.surface.Surface((2, 2))
+      self.rect = self.image.get_rect(center = pos)
+
+      pygame.draw.circle(self.image, color, (1, 1), 1)

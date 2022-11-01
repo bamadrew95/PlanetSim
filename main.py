@@ -1,6 +1,7 @@
 import pygame, sys, time
 from settings import *
-from game_files.sprites import SimBG, Sun, Satellite, TrailDot
+from game_files.sprites import CreateSprites
+from game_files.physics import Physics
 from game_files.ui import UI
 from random import randint
 import math
@@ -24,68 +25,23 @@ class Game():
 
     # initial states
     self.click_pos = (0, 0)
-    self.enter_add_mode = False
+    self.add_mode = False
     self.velocity_selector = (0, 0)
 
     # run game_files
     self.ui = UI()
+    self.physics = Physics()
 
     # Sprite groups
     self.all_sprites = pygame.sprite.Group()
     self.collision_sprites = pygame.sprite.Group()
     self.satellites = pygame.sprite.Group()
-    self.non_orbiting_sprites = pygame.sprite.Group()
+    self.orbiting_sprites = pygame.sprite.Group()
     self.trail_sprites = pygame.sprite.Group()
+    self.textboxes = pygame.sprite.Group()
     self.add_mode_arrow = pygame.sprite.GroupSingle()
 
-    # Initialize sprites
-    bg = SimBG(self.all_sprites)
-    sun = Sun([self.all_sprites, self.collision_sprites, self.non_orbiting_sprites], 25)
-
-  def add_satellite(self, pos):
-    Satellite([self.all_sprites, self.satellites], pos, self.velocity_selector, self.rand_color)
-
-  def add_mode(self):
-    mouse_pos = pygame.mouse.get_pos()
-    pygame.draw.line(self.screen, self.rand_color, self.click_pos, mouse_pos, 4)
-
-    self.velocity_meter(mouse_pos)
-  
-  def velocity_meter(self, mouse_pos):
-    click_pos_vect = pygame.math.Vector2(self.click_pos)
-    mouse_pos_vect = pygame.math.Vector2(mouse_pos)
-
-    rel_vect = click_pos_vect - mouse_pos_vect
-
-    distance = math.sqrt(math.pow(rel_vect.x, 2) + math.pow(rel_vect.y, 2))
-    total_velocity = round(distance / 100, 2)
-
-    self.velocity_selector = (-rel_vect.x / 100, -rel_vect.y / 100)
-
-    surf = self.default_font.render(str(total_velocity), True, self.rand_color)
-
-    if mouse_pos[0] >= self.click_pos[0]:
-      rect = surf.get_rect(midright = (self.click_pos[0] - 10, self.click_pos[1]))
-    else:
-      rect = surf.get_rect(midleft = (self.click_pos[0] + 10, self.click_pos[1]))
-
-    self.screen.blit(surf, rect)
-
-  def draw_trails(self):
-    for sprite in self.satellites:
-      TrailDot([self.all_sprites, self.trail_sprites], sprite.color, sprite.pos)
-    
-    for sprite in self.trail_sprites:
-      seconds = 10
-      frames = seconds * FRAMERATE
-      sprite.timer += 1
-      if sprite.timer > frames:
-        sprite.kill()
-
-  def collisions(self):
-    for sprite in self.satellites:
-      if pygame.sprite.spritecollide(sprite, self.collision_sprites, False):
-        sprite.kill()
+    self.create_sprites = CreateSprites(self.all_sprites, self.collision_sprites, self.orbiting_sprites, (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2), 750)
 
   def run(self):
     while True:
@@ -96,25 +52,30 @@ class Game():
         if event.type == pygame.QUIT:
           pygame.quit()
           sys.exit()
-        
-        if self.game_state == 'sim' and event.type == pygame.MOUSEBUTTONDOWN:
-          if self.enter_add_mode:
-            self.enter_add_mode = False
-            self.add_satellite(self.click_pos)
-          else:
-            self.enter_add_mode = True
-            self.click_pos = pygame.mouse.get_pos()
-            self.rand_color = (randint(75, 255), randint(75, 255), randint(75, 255))
-            
+
+        # SIMULATOR EVENTS
+        if self.game_state == 'sim':
+          if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.add_mode:
+              self.add_mode = False
+              self.ui.add_satellite([self.all_sprites, self.satellites], self.click_pos, self.velocity, self.rand_color, self.orbiting_sprites)
+            else:
+              self.add_mode = True
+              self.click_pos = pygame.mouse.get_pos()
+              self.rand_color = (randint(100, 255), randint(100, 255), randint(100, 255))
+
+        # MENU EVENTS
+
+      # End event loop
 
       # SIMULATOR GAME LOGIC
       if self.game_state == 'sim':
-        self.satellites.update()
+        self.all_sprites.update()
         self.all_sprites.draw(self.screen)
-        self.draw_trails()
-        self.collisions()
-        if self.enter_add_mode:
-          self.add_mode()
+        self.create_sprites.create_traildots([self.all_sprites, self.trail_sprites], self.satellites, self.trail_sprites)
+        self.physics.collisions(self.satellites, self.orbiting_sprites)
+        if self.add_mode:
+          self.velocity = self.ui.add_mode(self.screen, self.click_pos, self.default_font, self.rand_color)
 
       pygame.display.update()
       
