@@ -1,7 +1,9 @@
 import pygame
 from settings import *
-from game_files.sprites import CreateSprites
+from game_files.sprites.sim import CreateSprites, MenuButton
 import math
+
+Function = object
 
 class UI():
   def __init__(self):
@@ -84,3 +86,38 @@ class UI():
         rect = surf.get_rect(midleft = (click_pos[0] + 10, click_pos[1]))
 
       self.screen.blit(surf, rect)
+
+  class DialogueBox(pygame.sprite.Sprite):
+    def __init__(self, dialogue_box_groups: list, button_groups: list, label: str, option1: str, option2: str, func: Function):
+      super().__init__(dialogue_box_groups)
+      self.button_groups = button_groups
+      self.label = label
+      self.option1 = option1
+      self.option2 = option2
+      self.func = func
+      self.size = (600, 400)
+      
+      # bg
+      bg_color = (50, 50, 50)
+      self.image = pygame.surface.Surface(self.size)
+      self.image.fill(bg_color)
+      self.rect = self.image.get_rect(center = (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
+
+      # text
+      self.font_size = 48
+      self.font_color = (255, 0, 0)
+      self.font = pygame.font.Font('assets/fonts/Pixeltype.ttf', self.font_size)
+      font_surf = self.font.render(label, False, self.font_color)
+      font_rect = font_surf.get_rect(center = (self.size[0] / 2, self.size[1] / 4))
+      self.image.blit(font_surf, font_rect)
+
+      # yes button
+      button_size = (250, 75)
+      self.add_button('Yes', 9001, button_size, (self.rect.centerx - (button_size[0] / 2 + 15), self.rect.centery + 150))
+      self.add_button('No', 9002, button_size, (self.rect.centerx + (button_size[0] / 2 + 15), self.rect.centery + 150))
+
+    def run(self):
+      self.func()
+
+    def add_button(self, text, id, size, pos):
+      MenuButton(self.button_groups, id, text, size, pos, (0, 0, 0), self.font_color, self.font_size)

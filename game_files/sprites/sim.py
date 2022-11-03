@@ -14,15 +14,16 @@ class CreateSprites:
     
   def main_menu(self, bg_groups: list, button_groups: list):
     MenuBG(bg_groups)
-    MenuButton(button_groups, 1001, 'Start Simulator', WINDOW_HEIGHT / 2, (0, 0, 0), (255, 0, 0), 48)
-    MenuButton(button_groups, 1002, 'Settings', WINDOW_HEIGHT / 2 + 80, (0, 0, 0), (255, 0, 0), 48)
+    MenuButton(button_groups, 1001, 'Start Simulator', (400, 60), (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2), (0, 0, 0), (255, 0, 0), 48)
+    MenuButton(button_groups, 1002, 'Settings', (400, 60), (WINDOW_WIDTH / 2 ,WINDOW_HEIGHT / 2 + 80), (0, 0, 0), (255, 0, 0), 48)
 
   def settings_menu(self, bg_groups: list, slider_groups: list):
     MenuBG(bg_groups)
-    self.volume_setting = MenuSlider(slider_groups, 1101, 'Music Volume', MUSIC_VOLUME, 0)
-    self.effects_setting = MenuSlider(slider_groups, 1102, 'Effects Volume', EFFECTS_VOLUME, 1)
-    # self.volume_setting = MenuSlider(slider_groups, 1103, 'Test', 2)
-    # MenuSlider(slider_groups, 1101, 'Volume', (WINDOW_HEIGHT / 2) - 100)
+    self.game_speed_setting = MenuSlider(slider_groups, 1100, 'Game Speed', 1, 10, GAME_SPEED, 0)
+    self.trail_length = MenuSlider(slider_groups, 1101, 'Trail Length', 0, 20, TRAIL_LENGTH, 1)
+    self.volume_setting = MenuSlider(slider_groups, 1102, 'Music Volume', 0, 100, MUSIC_VOLUME, 2)
+    self.effects_setting = MenuSlider(slider_groups, 1103, 'Effects Volume', 0, 100, EFFECTS_VOLUME, 3)
+    self.framerate_setting = MenuSlider(slider_groups, 1104, 'Max Framerate', 30, 120, FRAMERATE, 4)
   
   def bg(self, groups: list):
     SimBG(groups)
@@ -33,8 +34,8 @@ class CreateSprites:
   def satellite(self, groups: list, pos: tuple, speed: tuple, color: tuple, sun_sprites):
     Satellite(groups, pos, speed, color, sun_sprites)
 
-  def traildots(self, groups: list, satellites, trail_sprites):
-    TrailDots().draw_trails(groups, satellites, trail_sprites)
+  def traildots(self, groups: list, satellites, trail_sprites, trail_longevity, dt):
+    TrailDots().draw_trails(groups, satellites, trail_sprites, trail_longevity, dt)
 
 class SimBG(pygame.sprite.Sprite):
   def __init__(self, groups):
@@ -111,6 +112,7 @@ class Satellite(pygame.sprite.Sprite):
     self.init_position = pos
     self.speed = pygame.math.Vector2(speed)
     self.sun_sprites = sun_sprites
+    self.timer = 0
 
     self.image = pygame.surface.Surface((self.size, self.size))
     self.image.fill((255, 0, 255))
@@ -127,30 +129,35 @@ class Satellite(pygame.sprite.Sprite):
     self.pi = math.pi
     self.threepiovertwo = (3 * math.pi) / 2
 
-  def update(self):
+  def update(self, dt):
     for sun_sprite in self.sun_sprites:
       gravitational_force = Physics().gravitational_force(sun_sprite.mass, sun_sprite.pos, self.pos)
-      self.speed -= gravitational_force
+      self.speed -= gravitational_force * dt
 
     # calc new position
-    self.pos += self.speed
+    self.pos += self.speed * dt
     self.rect.center = pygame.math.Vector2((round(self.pos.x), round(self.pos.y)))
+
+    if math.sqrt(math.pow(self.pos.x, 2) + math.pow(self.pos.y, 2)) > 5000:
+      self.kill()
+      del self
 
 class TrailDots():
   def __init__(self):
     pass
 
-  def draw_trails(self, group_list, satellites_group, trail_sprites_group):
-    x =+ 1
+  def draw_trails(self, group_list, satellites_group, trail_sprites_group, trail_longevity, dt):
     for sprite in satellites_group:
-      if (x // 2) == 0:
+      remain = sprite.timer % 2
+      print(remain)
+      if not remain:
         self.TrailDot(group_list, sprite.color, sprite.pos)
-    
-    if x > 64:
-      x = 0
+      if sprite.timer > 63:
+        sprite.timer = 0
+      sprite.timer += 1
     
     for sprite in trail_sprites_group:
-      seconds = 10
+      seconds = trail_longevity
       frames = seconds * FRAMERATE
       sprite.timer += 1
       if sprite.timer > frames:
@@ -178,32 +185,34 @@ class MenuBG(pygame.sprite.Sprite):
     self.rect = self.image.get_rect(topleft = (0, 0))
 
 class MenuButton(pygame.sprite.Sprite):
-  def __init__(self, groups, id: int, text: str, y_pos: int, bg_color: tuple, font_color: tuple, font_size: int):
+  def __init__(self, groups, id: int, text: str, size: tuple, pos: int, bg_color: tuple, font_color: tuple, font_size: int):
     super().__init__(groups)
     self.id = id
     self.text = text
     self.bg_color = bg_color
     self.font_color = font_color
-    self.size = (400, 60)
+    self.size = size
     self.hover = False
 
     self.button_font = pygame.font.Font('assets/fonts/Pixeltype.ttf', font_size)
     
     self.image = pygame.surface.Surface(self.size)
-    self.rect = self.image.get_rect(midbottom = (WINDOW_WIDTH / 2, y_pos))
+    self.rect = self.image.get_rect(midbottom = pos)
 
-  def update(self):
+  def update(self, dt):
     # update text to surface
     self.image.fill(self.bg_color)
     text_surf = self.button_font.render(self.text, False, self.font_color)
-    text_rect = text_surf.get_rect(midtop = (self.size[0] / 2, 16))
+    text_rect = text_surf.get_rect(center = (self.size[0] / 2, self.size[1] / 2))
     self.image.blit(text_surf, text_rect)
 
 class MenuSlider(pygame.sprite.Sprite):
-  def __init__(self, groups, id: int, label: str, init_value: int, setting_index: int):
+  def __init__(self, groups, id: int, label: str, min_value: int, max_value: int, init_value: int, setting_index: int) -> int:
     super().__init__(groups)
     self.id = id
     self.label = label
+    self.min_value = min_value
+    self.max_value = max_value
     self.value = init_value
     self.setting_index = setting_index
     self.label_text = self.label + ': ' + str(self.value)
@@ -231,14 +240,14 @@ class MenuSlider(pygame.sprite.Sprite):
     # slider handle
     handle_color = (150, 150, 150)
     handle_size = 30
-    init_handle_x_pos = (self.value / 100) * (self.size[0] - self.margin * 2)
+    init_handle_x_pos = (self.value - self.min_value) * ((self.size[0] - (self.margin * 2)) / (self.max_value - self.min_value)) + self.margin
     self.handle_surf = pygame.surface.Surface((handle_size, handle_size))
     self.handle_rect = self.handle_surf.get_rect(center = (init_handle_x_pos, self.track_y))
     self.handle_surf.set_colorkey((255, 0, 255))
     self.handle_surf.fill((255, 0, 255))
     pygame.draw.circle(self.handle_surf, handle_color, (handle_size / 2, handle_size / 2), handle_size / 2)
 
-  def update(self):
+  def update(self, dt):
     mouse_pos = pygame.mouse.get_pos()
 
     # refill bg
@@ -256,15 +265,14 @@ class MenuSlider(pygame.sprite.Sprite):
     pygame.draw.line(self.image, self.track_color, (self.margin, self.track_y), (self.size[0] - self.margin, self.track_y), 4)
 
     # render slider handle
-    x = self.value / 100 * (self.size[0] - self.margin * 2) + self.margin
+    x = (self.value - self.min_value) * ((self.size[0] - (self.margin * 2)) / (self.max_value - self.min_value)) + self.margin
     self.handle_rect.centerx = x
     self.image.blit(self.handle_surf, self.handle_rect)
 
   def change_value(self, x_pos: int) -> int:
-    value = x_pos - ((WINDOW_WIDTH - (self.size[0] - (self.margin * 2))) / 2)
-    value = round(value / (self.size[0] - self.margin * 2) * 100)
-    if value < 0:
-      value = 0
-    elif value > 100:
-      value = 100
+    value = round(((x_pos - ((WINDOW_WIDTH - (self.size[0] - self.margin * 2)) / 2)) * (1 / (self.size[0] - self.margin * 2)) * (self.max_value - self.min_value)) + self.min_value)
+    if value < self.min_value:
+      value = self.min_value
+    elif value > self.max_value:
+      value = self.max_value
     return value
