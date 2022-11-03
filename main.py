@@ -64,6 +64,25 @@ class Game():
     self.create_sprites.init_sim([self.all_sprites, self.sim_sprites], [self.all_sprites, self.sim_sprites, self.orbiting_sprites], (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2), 500)
     self.ui.create_main_menu([self.all_sprites, self.mainmenu_sprites], [self.all_sprites, self.mainmenu_sprites, self.button_sprites])
     self.ui.create_settings_menu([self.all_sprites, self.settingsmenu_sprites], [self.all_sprites, self.settingsmenu_sprites, self.slider_sprites])
+  
+  def save_settings(self):
+    file_path = 'settings.py'
+    window_width = WINDOW_WIDTH
+    window_height = WINDOW_HEIGHT
+    framerate = FRAMERATE
+    init_game_state = str(INITIAL_GAME_STATE)
+    unitsize = UNITSIZE
+    music_volume = self.ui.get_slider_setting(self.slider_sprites, 1101)
+    effects_volume = self.ui.get_slider_setting(self.slider_sprites, 1102)
+    
+    with open(file_path, 'w') as f:
+        f.write(f'WINDOW_WIDTH = {window_width}\n')
+        f.write(f'WINDOW_HEIGHT = {window_height}\n')
+        f.write(f'FRAMERATE = {framerate}\n')
+        f.write(f'INITIAL_GAME_STATE = "{init_game_state}"\n')
+        f.write(f'UNITSIZE = {unitsize}\n')
+        f.write(f'MUSIC_VOLUME = {music_volume}\n')
+        f.write(f'EFFECTS_VOLUME = {effects_volume}\n')
 
   def run(self):
     while True:
@@ -72,6 +91,7 @@ class Game():
       # event loop
       for event in pygame.event.get():
         if event.type == pygame.QUIT:
+          self.save_settings()
           pygame.quit()
           sys.exit()
 
