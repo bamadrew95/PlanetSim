@@ -9,9 +9,10 @@ class Physics:
     self.pi = math.pi
     self.threepiovertwo = (3 * math.pi) / 2
 
-  def collisions(self, destroy_group, do_not_destroy_group):
+  def collisions(self, destroy_group, do_not_destroy_group, crash_sound):
     for sprite in destroy_group:
       if pygame.sprite.spritecollide(sprite, do_not_destroy_group, False):
+        crash_sound.play()
         sprite.kill()
         del sprite
 

@@ -3,7 +3,7 @@ from settings import *
 from game_files.sprites import CreateSprites
 from game_files.physics import Physics
 from game_files.ui import UI
-from game_files.music import Music
+from game_files.audio import Sound
 from random import randint
 
 class Game():
@@ -33,15 +33,19 @@ class Game():
     self.click_pos = (0, 0)
     self.add_mode = False
     self.velocity_selector = (0, 0)
-    self.music_volume = MUSIC_VOLUME
 
     # run game_files
     self.ui = UI()
     self.physics = Physics()
-    self.menu_music = Music('Acadia.mp3', self.music_volume)
-    self.sim_music = Music('DreamyFlashback.mp3', self.music_volume)
-    self.paused_music = Music('FrozenStar.mp3', self.music_volume)
-    self.menu_music.play()
+
+    # audio
+      # music
+    self.menu_music = Sound('Acadia.mp3', MUSIC_VOLUME)
+    self.sim_music = Sound('DreamyFlashback.mp3', MUSIC_VOLUME)
+    self.paused_music = Sound('FrozenStar.mp3', MUSIC_VOLUME)
+    self.menu_music.play_loop()
+      # sound effects
+    self.crash_sound = Sound('impact.mp3', EFFECTS_VOLUME)
 
     # Sprite groups
     self.all_sprites = pygame.sprite.Group()
@@ -89,17 +93,17 @@ class Game():
               if self.paused:
                 self.paused = False
                 self.paused_music.stop()
-                self.sim_music.play()
+                self.sim_music.play_loop()
               else:
                 self.paused = True
                 self.sim_music.stop()
-                self.paused_music.play()
+                self.paused_music.play_loop()
 
             # check for escape and go to menu
             if event.key == pygame.K_ESCAPE:
               self.game_state = 'mainmenu'
               self.sim_music.stop()
-              self.menu_music.play()
+              self.menu_music.play_loop()
               for sprite in self.satellite_sprites:
                 sprite.kill()
                 del sprite
@@ -113,7 +117,7 @@ class Game():
             if button.hover and event.type == pygame.MOUSEBUTTONDOWN:
               if button.id == 1001:
                 self.game_state = 'sim'
-                self.sim_music.play()
+                self.sim_music.play_loop()
                 self.menu_music.stop()
                 pygame.mouse.set_cursor(self.default_cursor)
               if button.id == 1002:
@@ -130,7 +134,7 @@ class Game():
       # SIMULATOR GAME LOGIC
       if self.game_state == 'sim':
         if not self.paused:
-          self.physics.collisions(self.satellite_sprites, self.orbiting_sprites)
+          self.physics.collisions(self.satellite_sprites, self.orbiting_sprites, self.crash_sound)
           self.create_sprites.traildots([self.all_sprites, self.sim_sprites, self.trail_sprites], self.satellite_sprites, self.trail_sprites)
           self.sim_sprites.update()
         self.sim_sprites.draw(self.screen)
@@ -150,6 +154,8 @@ class Game():
         self.menu_music.update_volume(self.ui.get_slider_setting(self.slider_sprites, 1101) / 100)
         self.sim_music.update_volume(self.ui.get_slider_setting(self.slider_sprites, 1101) / 100)
         self.paused_music.update_volume(self.ui.get_slider_setting(self.slider_sprites, 1101) / 100)
+        # Sound Effects
+        self.crash_sound.update_volume(self.ui.get_slider_setting(self.slider_sprites, 1102) / 100)
 
         # watch sliders for hover events
         self.ui.detect_hover(self.slider_sprites, self.default_cursor, self.pointer_cursor)

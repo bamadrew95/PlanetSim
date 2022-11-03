@@ -3,7 +3,6 @@ import pygame
 from settings import *
 from game_files.physics import Physics
 import math
-from random import randint
 
 class CreateSprites:
   def __init__(self):
@@ -20,8 +19,8 @@ class CreateSprites:
 
   def settings_menu(self, bg_groups: list, slider_groups: list):
     MenuBG(bg_groups)
-    self.volume_setting = MenuSlider(slider_groups, 1101, 'Music Volume', 0)
-    # self.volume_setting = MenuSlider(slider_groups, 1102, 'Game Speed', 1)
+    self.volume_setting = MenuSlider(slider_groups, 1101, 'Music Volume', MUSIC_VOLUME, 0)
+    self.effects_setting = MenuSlider(slider_groups, 1102, 'Effects Volume', EFFECTS_VOLUME, 1)
     # self.volume_setting = MenuSlider(slider_groups, 1103, 'Test', 2)
     # MenuSlider(slider_groups, 1101, 'Volume', (WINDOW_HEIGHT / 2) - 100)
   
@@ -201,11 +200,11 @@ class MenuButton(pygame.sprite.Sprite):
     self.image.blit(text_surf, text_rect)
 
 class MenuSlider(pygame.sprite.Sprite):
-  def __init__(self, groups, id: int, label: str, setting_index: int):
+  def __init__(self, groups, id: int, label: str, init_value: int, setting_index: int):
     super().__init__(groups)
     self.id = id
-    self.value = MUSIC_VOLUME
     self.label = label
+    self.value = init_value
     self.setting_index = setting_index
     self.label_text = self.label + ': ' + str(self.value)
     self.size = (400, 80)

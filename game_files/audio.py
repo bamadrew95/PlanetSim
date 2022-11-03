@@ -1,7 +1,7 @@
 import pygame
 from settings import *
 
-class Music():
+class Sound():
   def __init__(self, file_name, volume):
     f = 'assets/audio/' + file_name
     self.volume = volume / 100
@@ -13,8 +13,11 @@ class Music():
     self.volume = volume
     self.music.set_volume(self.volume)
   
-  def play(self):
+  def play_loop(self):
     self.music.play(loops = -1)
+
+  def play(self):
+    self.music.play()
 
   def stop(self):
     self.music.stop()
