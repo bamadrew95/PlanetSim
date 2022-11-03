@@ -13,6 +13,7 @@ class Physics:
     for sprite in destroy_group:
       if pygame.sprite.spritecollide(sprite, do_not_destroy_group, False):
         sprite.kill()
+        del sprite
 
   def gravitational_force(self, obj_mass: int, obj_pos: pygame_vector, sprite_pos: pygame_vector):
     rel_pos = sprite_pos - obj_pos

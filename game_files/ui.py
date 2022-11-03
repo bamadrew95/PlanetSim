@@ -1,20 +1,38 @@
 import pygame
 from settings import *
-from game_files.sprites import Satellite
+from game_files.sprites import CreateSprites
 import math
 
 class UI():
   def __init__(self):
-    pass
+    self.create_sprites = CreateSprites()
+    
+  def create_main_menu(self, bg_groups, button_groups):
+    self.create_sprites.main_menu(bg_groups, button_groups)
+
+  def create_settings_menu(self, bg_groups, slider_groups):
+    self.create_sprites.settings_menu(bg_groups, slider_groups)
+
+  def get_slider_setting(self, slider_sprites, slider_id: int) -> int:
+    for slider in slider_sprites:
+      if slider.id == slider_id:
+        return slider.value
 
   def detect_hover(self, sprite_group, default_cursor, pointer_cursor):
     hover = 0
     for sprite in sprite_group:
-      if sprite.rect.collidepoint(pygame.mouse.get_pos()):
-        sprite.hover = True
-        hover += 1
+      if hasattr(sprite, 'handle_rect'):
+        if sprite.handle_rect.collidepoint(pygame.mouse.get_pos()):
+          sprite.hover = True
+          hover += 1
+        else:
+          sprite.hover = False
       else:
-        sprite.hover = False
+        if sprite.rect.collidepoint(pygame.mouse.get_pos()):
+          sprite.hover = True
+          hover += 1
+        else:
+          sprite.hover = False
 
     if hover:
       pygame.mouse.set_cursor(pointer_cursor)
@@ -31,7 +49,7 @@ class UI():
     return self.velocity_meter.velocity
 
   def add_satellite(self, group_list, init_pos, velocity, color, orbiting_sprites):
-    Satellite(group_list, init_pos, velocity, color, orbiting_sprites)
+    self.create_sprites.satellite(group_list, init_pos, velocity, color, orbiting_sprites)
 
   class VelocityMeter:
     def __init__(self, surface, click_pos, mouse_pos, font, color):
@@ -58,7 +76,7 @@ class UI():
 
       self.velocity = (rel_vect.x, rel_vect.y)
 
-      surf = self.font.render(str(self.total_velocity), True, color)
+      surf = self.font.render(str(self.total_velocity), False, color)
 
       if mouse_pos[0] >= click_pos[0]:
         rect = surf.get_rect(midright = (click_pos[0] - 10, click_pos[1]))
