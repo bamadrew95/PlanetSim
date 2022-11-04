@@ -1,4 +1,4 @@
-# Hint variables
+# Type Hint variables
 PygameSpriteGroupList = list
 PygameVector = object
 DisplaySurface = object

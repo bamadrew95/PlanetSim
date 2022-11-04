@@ -2,6 +2,7 @@ import pygame
 from settings import *
 from documentation import *
 from game_files.sprites.sim import CreateSimSprites
+from game_files.physics import Physics
 import math
 
 class UI():
@@ -199,23 +200,18 @@ class UI():
       self.color = color
 
       rel_vect = self.click_pos - self.mouse_pos
+      distance_tuple = (abs(rel_vect.x), abs(rel_vect.y))
 
       distance = math.sqrt(math.pow(rel_vect.x, 2) + math.pow(rel_vect.y, 2))
       self.total_velocity = round(math.pow(distance / 100, 2), 2)
 
-      if rel_vect.x < 0:
-        rel_vect.x = math.pow(rel_vect.x / 100, 2)
-      else:
-        rel_vect.x = -math.pow(rel_vect.x / 100, 2)
+      force = distance / 50 # 50 comes from default grid size. I decided not to make it change with the grid size setting.
+      theta = Physics().find_angle((rel_vect.x, rel_vect.y), distance_tuple)
+      force_x = force * math.cos(theta)
+      force_y = force * math.sin(theta)
+      self.velocity = (-force_x, force_y)
 
-      if rel_vect.y < 0:
-        rel_vect.y = math.pow(rel_vect.y / 100, 2)
-      else:
-        rel_vect.y = -math.pow(rel_vect.y / 100, 2)
-
-      self.velocity = (rel_vect.x, rel_vect.y)
-
-      surf = self.font.render(str(self.total_velocity), False, color)
+      surf = self.font.render(str(round(force, 2)), False, color)
 
       if mouse_pos[0] >= click_pos[0]:
         rect = surf.get_rect(midright = (click_pos[0] - 10, click_pos[1]))

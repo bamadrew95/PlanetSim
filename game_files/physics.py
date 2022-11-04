@@ -20,7 +20,7 @@ class Physics:
     rel_pos = sprite_pos - obj_pos
     rel_pos.y = -rel_pos.y
 
-    distance_vect = pygame.math.Vector2((abs(rel_pos.x), abs(rel_pos.y)))
+    distance_tuple = (abs(rel_pos.x), abs(rel_pos.y))
 
     distance = math.sqrt(math.pow(rel_pos.x, 2) + math.pow(rel_pos.y, 2))
 
@@ -30,40 +30,7 @@ class Physics:
     else:
       gravity_scalar = 0
 
-    # find quadrant
-    if rel_pos.x >= 0 and rel_pos.y < 0:
-      quad = 1
-    elif rel_pos.x < 0 and rel_pos.y < 0:
-      quad = 2
-    elif rel_pos.x < 0 and rel_pos.y >= 0:
-      quad = 3
-    else:
-      quad = 4
-
-    # calc theta
-    if quad == 1:
-      if distance_vect.x:
-        theta = math.atan(distance_vect.y / distance_vect.x)
-      else:
-        theta = self.piovertwo
-
-    if quad == 2:
-      if distance_vect.y:
-        theta = (math.atan(distance_vect.x / distance_vect.y)) + (self.piovertwo)
-      else:
-        theta = self.pi
-    
-    if quad == 3:
-      if distance_vect.x:
-        theta = (math.atan(distance_vect.y / distance_vect.x)) + (self.pi)
-      else:
-        theta = self.threepiovertwo / 2
-
-    if quad == 4:
-      if distance_vect.y:
-        theta = (math.atan(distance_vect.x / distance_vect.y)) + (self.threepiovertwo)
-      else:
-        theta = 0
+    theta = self.find_angle((rel_pos.x, rel_pos.y), distance_tuple)
 
     # calc change in speed
     grav_force_x = math.cos(theta) * gravity_scalar
@@ -71,3 +38,41 @@ class Physics:
 
     gravitational_force = pygame.math.Vector2((grav_force_x, grav_force_y))
     return gravitational_force
+
+  def find_angle(self, rel_pos: tuple, distance_tuple: tuple):
+    # find quadrant
+      if rel_pos[0] >= 0 and rel_pos[1] < 0:
+        quad = 1
+      elif rel_pos[0] < 0 and rel_pos[1] < 0:
+        quad = 2
+      elif rel_pos[0] < 0 and rel_pos[1] >= 0:
+        quad = 3
+      else:
+        quad = 4
+
+      # calc theta
+      if quad == 1:
+        if distance_tuple[0]:
+          theta = math.atan(distance_tuple[1] / distance_tuple[0])
+        else:
+          theta = self.piovertwo
+
+      if quad == 2:
+        if distance_tuple[1]:
+          theta = (math.atan(distance_tuple[0] / distance_tuple[1])) + (self.piovertwo)
+        else:
+          theta = self.pi
+      
+      if quad == 3:
+        if distance_tuple[0]:
+          theta = (math.atan(distance_tuple[1] / distance_tuple[0])) + (self.pi)
+        else:
+          theta = self.threepiovertwo / 2
+
+      if quad == 4:
+        if distance_tuple[1]:
+          theta = (math.atan(distance_tuple[0] / distance_tuple[1])) + (self.threepiovertwo)
+        else:
+          theta = 0
+      
+      return theta
